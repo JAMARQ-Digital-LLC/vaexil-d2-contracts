@@ -1,0 +1,26 @@
+{
+  "name": "@vaexil/d2-contracts",
+  "version": "1.0.0",
+  "description": "Single source of truth for the wire types shared between the Vaexil D2 Armor Optimizer and Armory.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "license": "UNLICENSED",
+  "private": false
+}
