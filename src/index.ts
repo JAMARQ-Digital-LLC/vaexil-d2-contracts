@@ -11,9 +11,7 @@
 // (validation, serialization, handoff queueing) stay in each app because they
 // depend on app-local modules.
 
-// ---------------------------------------------------------------------------
 // Armor stat system
-// ---------------------------------------------------------------------------
 export const ARMOR_STAT_KEYS = [
   "weapons",
   "health",
@@ -26,9 +24,7 @@ export const ARMOR_STAT_KEYS = [
 export type ArmorStatKey = (typeof ARMOR_STAT_KEYS)[number];
 export type ArmorStats = Record<ArmorStatKey, number>;
 
-// ---------------------------------------------------------------------------
 // Build constraints and investment
-// ---------------------------------------------------------------------------
 export type ArmorSetToggleRequirement = {
   setHash: number;
   count: 2 | 4;
@@ -47,9 +43,7 @@ export type ArmorInvestmentSettings = {
   respectCurrentEnergy: boolean;
 };
 
-// ---------------------------------------------------------------------------
 // Subclass configuration
-// ---------------------------------------------------------------------------
 export type ArmorSubclassSource = "equipped" | "custom" | "none";
 
 export type ArmorSubclassConfiguration = {
@@ -61,9 +55,7 @@ export type ArmorSubclassConfiguration = {
   pinnedFragmentHashes: number[];
 };
 
-// ---------------------------------------------------------------------------
 // Explorer filters and resources
-// ---------------------------------------------------------------------------
 export type ArmorExplorerLocation =
   | "target-character"
   | "vault"
@@ -103,9 +95,7 @@ export type ArmorTargetCharacter = {
   characterId?: string;
 };
 
-// ---------------------------------------------------------------------------
 // Recommended action plan (recommendation-only; never executed by the Armory)
-// ---------------------------------------------------------------------------
 export type ArmorRecommendedActionKind =
   | "move"
   | "equip"
@@ -122,9 +112,7 @@ export type ArmorRecommendedAction = {
   recommendationOnly: true;
 };
 
-// ---------------------------------------------------------------------------
 // Durable, ownership-independent armor build intent (the shared URL config)
-// ---------------------------------------------------------------------------
 export type ArmorOptimizerUrlConfiguration = {
   className: string;
   exotic: string;
@@ -141,10 +129,8 @@ export type ArmorOptimizerUrlConfiguration = {
   resourceMode?: ArmorResourceMode;
 };
 
-// ---------------------------------------------------------------------------
 // Loadout intent (Armory -> Optimizer export/import) and owned loadout
 // (Optimizer -> Armory save). Versioned so either side can gate on version.
-// ---------------------------------------------------------------------------
 export const VAEXIL_LOADOUT_INTENT_VERSION = 1 as const;
 
 export type VaexilLoadoutIntentV1 = {
@@ -180,7 +166,6 @@ export type VaexilOwnedArmorLoadoutV1 = {
   actionPlan: ArmorRecommendedAction[];
 };
 
-// ---------------------------------------------------------------------------
 // Cross-app execution handoff (sessionStorage: vaexil:destiny2:handoff:*:v1)
 //
 // DRIFT FIX: the Optimizer (writer) previously declared source as
@@ -189,7 +174,6 @@ export type VaexilOwnedArmorLoadoutV1 = {
 // Unified here to the full set. "individual-item" is Armory-internal today;
 // keeping it in the shared type prevents the two hand-declared copies from
 // silently disagreeing and lets the compiler catch any future addition.
-// ---------------------------------------------------------------------------
 export type InventoryExecutionHandoffSource =
   | "individual-item"
   | "recommendation"
