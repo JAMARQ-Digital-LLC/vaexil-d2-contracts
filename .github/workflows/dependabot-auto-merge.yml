@@ -1,0 +1,40 @@
+# Tier A — GitHub-native auto-merge for safe Dependabot updates.
+#
+# Canonical copy (ADR-0021). Vendor this file to a repo as
+# .github/workflows/dependabot-auto-merge.yml. When a Dependabot PR is a semver
+# minor or patch, it enables auto-merge; GitHub then squash-merges it only once
+# the branch-protection required checks pass. Majors are left untouched for the
+# Tier B prepare-and-flag resolver / owner review.
+#
+# Repo prerequisites (set during rollout):
+#   - Settings: "Allow auto-merge" on (and "Automatically delete head branches").
+#   - Branch protection on the default branch with >=1 required status check
+#     (the repo's own CI job), no required review, enforce_admins:false.
+name: Dependabot auto-merge
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge for minor/patch
+        if: >-
+          steps.meta.outputs.update-type == 'version-update:semver-minor' ||
+          steps.meta.outputs.update-type == 'version-update:semver-patch'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
