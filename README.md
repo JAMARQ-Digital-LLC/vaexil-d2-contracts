@@ -9,7 +9,7 @@ The package started as the contract between two separately deployed apps, the Va
 vaexil.tv, pinned to a tag. `dist/` is committed, so no install-time build is needed:
 
 ```jsonc
-"@vaexil/d2-contracts": "github:jmars319/vaexil-d2-contracts#v1.0.0"
+"@vaexil/d2-contracts": "github:JAMARQ-Digital-LLC/vaexil-d2-contracts#v1.0.0"
 ```
 
 The imports all live in the Armory, under `src/app/(hub)/armory/`:
