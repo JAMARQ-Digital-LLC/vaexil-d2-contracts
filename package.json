@@ -1,7 +1,7 @@
 {
   "name": "@vaexil/d2-contracts",
   "version": "1.0.0",
-  "description": "Single source of truth for the wire types shared between the Vaexil D2 Armor Optimizer and Armory.",
+  "description": "Shared wire types for the Destiny 2 Armor Optimizer and Armory on vaexil.tv.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

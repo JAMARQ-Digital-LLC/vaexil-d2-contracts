@@ -1,43 +1,35 @@
 # @vaexil/d2-contracts
 
-Single source of truth for the wire types shared between the **Vaexil D2 Armor Optimizer** and the **Vaexil D2 Armory**. The two apps deploy independently but must agree on the loadout shape, the optimizer URL configuration, the recommended action plan, and the cross-app execution handoff.
+Shared wire types for the Destiny 2 tools on **vaexil.tv**: the Armor Optimizer and the Armory, both served from `destiny2.vaexil.tv`.
 
-Before this package the shapes were hand-mirrored in each repo (Armory's `armor-loadout-shape.ts` even names the Optimizer as "source of truth… kept in sync by hand"). They had begun to drift; this package collapses that into one typed contract.
+The package started as the contract between two separately deployed apps, the Vaexil D2 Armor Optimizer and the Vaexil D2 Armory. Both were folded into vaexil.tv on 2026-08-16 and their standalone repos are archived. The package was kept on purpose: it holds the loadout and handoff shapes as a versioned, typed seam, so a tool surface can be pulled back out later without renegotiating its contract.
 
-## What's in it
+## Who uses it
 
-Pure types + version constants only (no runtime logic — validation/serialization/handoff helpers stay in each app because they depend on app-local modules): the armor stat system, investment/subclass/explorer/resource config, `ArmorOptimizerUrlConfiguration`, `VaexilLoadoutIntentV1`, `VaexilOwnedArmorLoadoutV1`, and `InventoryExecutionHandoffV2` (+ its manual-step and source unions).
-
-## The drift this fixes
-
-`InventoryExecutionHandoffV2.source` was declared as `"recommendation" | "alternative" | "saved-loadout"` on the Optimizer (writer) but the superset including `"individual-item"` on the Armory (reader). Benign today (the Optimizer never writes `"individual-item"`), but a latent interop bug: a future change to one side's `source` values would silently diverge. This package unifies it to the full set, so the compiler catches any mismatch.
-
-## Distribution (two separate Vercel apps)
-
-Recommended: **git dependency to this repo**, pinned to a tag, matching the `cpanel-backend-kit` VCS precedent. `dist/` is committed so no install-time build is needed on Vercel:
+vaexil.tv, pinned to a tag. `dist/` is committed, so no install-time build is needed:
 
 ```jsonc
-// in each app's package.json
 "@vaexil/d2-contracts": "github:jmars319/vaexil-d2-contracts#v1.0.0"
 ```
 
-Alternative if you prefer no external fetch on the build: `npm pack` this package and commit the tarball into each app under `vendor/`, referenced via `"file:vendor/vaexil-d2-contracts-1.0.0.tgz"`.
+The imports all live in the Armory, under `src/app/(hub)/armory/`:
 
-## Migration plan
+- `_lib/armor-loadout-shape.ts`, `_lib/inventory-action-contract.ts` and `_lib/vaexil-loadout-contract.ts` take their types from the package and re-export them for local use.
+- `_components/use-armory-recipe-actions.ts` imports `VaexilLoadoutIntentV1` and `VAEXIL_LOADOUT_INTENT_VERSION` directly.
 
-### Armory — low risk (do first)
-Armory's contract files are already pure, logic-free mirrors, so this is a clean re-export swap:
-- `src/lib/armor-loadout-shape.ts` → replace its type declarations with `export * from "@vaexil/d2-contracts";` (every `./armor-loadout-shape` import keeps resolving).
-- `src/lib/vaexil-loadout-contract.ts` → import `VaexilOwnedArmorLoadoutV1` + `VAEXIL_OWNED_ARMOR_LOADOUT_VERSION` from the package; keep the local `isVaexilOwnedArmorLoadout` guard.
-- `src/lib/inventory-action-contract.ts` → import `InventoryExecutionHandoffV2` / `InventoryManualStepV2` from the package for the handoff half (keep the Armory-only executor internals local).
-- Give the currently-untyped intent literal in `src/components/armory-client.tsx` (~line 377) the `VaexilLoadoutIntentV1` type from the package.
-- Verify: `npm run build`, the 59-test suite, `tsc --noEmit`, and a green Vercel preview.
+The Armor Optimizer page runs on vaexil.tv's own embedded implementation and does not import the package.
 
-### Optimizer — supervised (do with eyes on it)
-This is the harder half and why it should not be blind-migrated: the contract types are interleaved with runtime logic and defined off transitive types.
-- `src/lib/armor-loadout-contract.ts` declares `VaexilLoadoutIntentV1` / `VaexilOwnedArmorLoadoutV1` alongside 66 lines of `safeConfiguration` validation; its `actionPlan` is typed as `ArmorRecommendedBuildSummary["actionPlan"]` (a derived type), which is structurally equal to `ArmorRecommendedAction[]` but not declared identically.
-- The config shapes come from `armor-optimizer-url.ts`, `armor-stat-definitions.ts`, `armor-explorer.ts`, `armor-investment-settings.ts`, `armor-subclass.ts`, `armor-resources.ts`, `armor-piece-rules.ts` — each with its own runtime logic.
-- Safe approach: keep the runtime functions in place; replace only the **type declaration** lines in each of those files with `import`/`re-export` from `@vaexil/d2-contracts`, verifying `tsc --noEmit` after each file so a structural mismatch is caught immediately. Reconcile the `actionPlan` element type (`ArmorRecommendedAction`) explicitly.
-- Verify: `npm run verify` (lint → typecheck → invariants → 45-test vitest → build → e2e) and a green Vercel preview before merge.
+## What's in it
 
-Both app PRs should be gated on green CI **and** a green Vercel preview before merging, since they ride a new cross-repo dependency into production.
+Pure types + version constants only (no runtime logic — validation/serialization/handoff helpers stay in the app because they depend on app-local modules): the armor stat system, investment/subclass/explorer/resource config, `ArmorOptimizerUrlConfiguration`, `VaexilLoadoutIntentV1`, `VaexilOwnedArmorLoadoutV1`, and `InventoryExecutionHandoffV2` (+ its manual-step and source unions).
+
+## The drift it fixed
+
+Before this package the shapes were hand-mirrored in each app, and they had begun to drift. `InventoryExecutionHandoffV2.source` was declared as `"recommendation" | "alternative" | "saved-loadout"` on the Optimizer (writer) but the superset including `"individual-item"` on the Armory (reader). The package unified it to the full set, so the compiler catches any mismatch.
+
+## Changing it
+
+- Edit `src/index.ts`, run `npm run verify` (typecheck, then build), and commit `src/` and `dist/` together.
+- A change reaches vaexil.tv only when you tag a new version and bump the pin there. Merging to `main` alone changes nothing in production.
+- Shapes carry their version in the name (`…V1`, `…V2`) and a matching version constant. Change a shape by adding a new version rather than editing a published one in place.
+- The repo is public. Its CI must stay on GitHub-hosted runners; never give it a self-hosted runner.
